@@ -262,7 +262,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     UIGestureRecognizerState state      = [gesture state];
     CGPoint translation                 = [gesture translationInView:self];
     CGPoint velocity                    = [gesture velocityInView:self];
-    CGFloat percentage                  = [self percentageWithOffset:CGRectGetMinX(_contentScreenshotView.frame) relativeToWidth:CGRectGetWidth(self.bounds)];
+    CGFloat percentage                  = [self percentageWithOffset:CGRectGetMinX(_contentScreenshotView.frame) relativeToWidth:[self getOverriddenWidth]];
     NSTimeInterval animationDuration    = [self animationDurationWithVelocity:velocity];
     _direction                          = [self directionWithPercentage:percentage];
     
@@ -356,6 +356,13 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 
 #pragma mark - Percentage
 
+- (CGFloat)getOverriddenWidth {
+    if ([_delegate respondsToSelector:@selector(swipeTableViewCellOverriddenWidth)]) {
+        return [_delegate swipeTableViewCellOverriddenWidth];
+    }
+    return CGRectGetWidth(self.bounds);
+}
+
 - (CGFloat)offsetWithPercentage:(CGFloat)percentage relativeToWidth:(CGFloat)width {
     CGFloat offset = percentage * width;
     
@@ -375,7 +382,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 }
 
 - (NSTimeInterval)animationDurationWithVelocity:(CGPoint)velocity {
-    CGFloat width                           = CGRectGetWidth(self.bounds);
+    CGFloat width                           = [self getOverriddenWidth];
     NSTimeInterval animationDurationDiff    = kMCDurationHighLimit - kMCDurationLowLimit;
     CGFloat horizontalVelocity              = velocity.x;
     
@@ -493,7 +500,7 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
 #pragma mark - Movement
 
 - (void)animateWithOffset:(CGFloat)offset {
-    CGFloat percentage = [self percentageWithOffset:offset relativeToWidth:CGRectGetWidth(self.bounds)];
+    CGFloat percentage = [self percentageWithOffset:offset relativeToWidth:[self getOverriddenWidth]];
     
     UIView *view = [self viewWithPercentage:percentage];
     
@@ -521,29 +528,29 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     
     if (isDragging) {
         if (percentage >= 0 && percentage < _firstTrigger) {
-            position.x = [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
         
         else if (percentage >= _firstTrigger) {
-            position.x = [self offsetWithPercentage:percentage - (_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self offsetWithPercentage:percentage - (_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
         
         else if (percentage < 0 && percentage >= -_firstTrigger) {
-            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self getOverriddenWidth] - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
         
         else if (percentage < -_firstTrigger) {
-            position.x = CGRectGetWidth(self.bounds) + [self offsetWithPercentage:percentage + (_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self getOverriddenWidth] + [self offsetWithPercentage:percentage + (_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
     }
     
     else {
         if (_direction == MCSwipeTableViewCellDirectionRight) {
-            position.x = [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
         
         else if (_direction == MCSwipeTableViewCellDirectionLeft) {
-            position.x = CGRectGetWidth(self.bounds) - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:CGRectGetWidth(self.bounds)];
+            position.x = [self getOverriddenWidth] - [self offsetWithPercentage:(_firstTrigger / 2) relativeToWidth:[self getOverriddenWidth]];
         }
         
         else {
@@ -567,18 +574,18 @@ typedef NS_ENUM(NSUInteger, MCSwipeTableViewCellDirection) {
     CGFloat origin;
     
     if (direction == MCSwipeTableViewCellDirectionLeft) {
-        origin = -CGRectGetWidth(self.bounds);
+        origin = -[self getOverriddenWidth];
     }
     
     else if (direction == MCSwipeTableViewCellDirectionRight) {
-        origin = CGRectGetWidth(self.bounds);
+        origin = [self getOverriddenWidth];
     }
     
     else {
         origin = 0;
     }
     
-    CGFloat percentage = [self percentageWithOffset:origin relativeToWidth:CGRectGetWidth(self.bounds)];
+    CGFloat percentage = [self percentageWithOffset:origin relativeToWidth:[self getOverriddenWidth]];
     CGRect frame = _contentScreenshotView.frame;
     frame.origin.x = origin;
     
